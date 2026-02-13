@@ -1,0 +1,791 @@
+{% extends 'bingo/base.html' %}
+{% load static %}
+{% block content %}
+
+<!-- Cinematic Horror Bingo Game -->
+<div class="horror-game-container">
+  
+  <!-- Atmospheric Background Effects -->
+  <div class="fog-bottom"></div>
+  <div class="dust-particles"></div>
+  <div class="vignette-overlay"></div>
+  
+  <!-- Main Game Layout -->
+  <div class="game-layout">
+    
+    <!-- Left Side: Player Info -->
+    <div class="player-info-panel">
+      <div class="player-name-display">
+        <div class="skull-icon">†</div>
+        <p id="userdiv" class="player-name"></p>
+      </div>
+      
+      <div class="stats-container">
+        <div class="stat-item">
+          <span class="stat-label">Total Souls</span>
+          <span class="stat-value"><span id="user_num"></span></span>
+        </div>
+        
+        <div class="stat-item turn-indicator">
+          <span class="stat-label">Current Turn</span>
+          <span class="stat-value turn-name"><span id="userTurn"></span></span>
+        </div>
+      </div>
+      
+      <div id="lastStepDiv" class="last-step-display"></div>
+    </div>
+    
+    <!-- Center: Bingo Board -->
+    <div class="bingo-board-container">
+      <div class="board-frame">
+        <div class="corner-ornament top-left">✟</div>
+        <div class="corner-ornament top-right">✟</div>
+        <div class="corner-ornament bottom-left">✟</div>
+        <div class="corner-ornament bottom-right">✟</div>
+        
+        <div class="grid horror-grid">
+          <span class="tile" data-id="1"></span>
+          <span class="tile" data-id="2"></span>
+          <span class="tile" data-id="3"></span>
+          <span class="tile" data-id="4"></span>
+          <span class="tile" data-id="5"></span>
+          <span class="tile" data-id="6"></span>
+          <span class="tile" data-id="7"></span>
+          <span class="tile" data-id="8"></span>
+          <span class="tile" data-id="9"></span>
+          <span class="tile" data-id="10"></span>
+          <span class="tile" data-id="11"></span>
+          <span class="tile" data-id="12"></span>
+          <span class="tile" data-id="13"></span>
+          <span class="tile" data-id="14"></span>
+          <span class="tile" data-id="15"></span>
+          <span class="tile" data-id="16"></span>
+          <span class="tile" data-id="17"></span>
+          <span class="tile" data-id="18"></span>
+          <span class="tile" data-id="19"></span>
+          <span class="tile" data-id="20"></span>
+          <span class="tile" data-id="21"></span>
+          <span class="tile" data-id="22"></span>
+          <span class="tile" data-id="23"></span>
+          <span class="tile" data-id="24"></span>
+          <span class="tile" data-id="25"></span>
+        </div>
+      </div>
+      
+      <div id="bingodiv" class="bingo-status"></div>
+      
+      <button class="horror-restart-btn" onclick="refreshPage()">
+        <span class="btn-glow"></span>
+        <span class="btn-text">RESTART</span>
+      </button>
+    </div>
+    
+    <!-- Right Side: Room Activity -->
+    <div class="activity-panel">
+      <div class="panel-header">
+        <span class="lantern-icon">✦</span>
+        <h3 class="panel-title">Room Activity</h3>
+        <span class="lantern-icon">✦</span>
+      </div>
+      
+      <div id="infodiv" class="activity-scroll">
+        <!-- Messages appear here -->
+      </div>
+      
+      <div class="chat-input-container">
+        <input 
+          id="chat-input" 
+          type="text" 
+          placeholder="Whisper your message..." 
+          class="horror-chat-input"
+        />
+      </div>
+    </div>
+    
+  </div>
+</div>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nosifer&family=Creepster&family=Eater&family=Butcherman&family=Metal+Mania&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #0b0f14;
+  overflow: hidden;
+}
+
+.horror-game-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background: 
+    linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.6)),
+    url('{% static "assets/bingo.jpg" %}') center/cover no-repeat fixed;
+  overflow: hidden;
+}
+
+/* Atmospheric Effects */
+.vignette-overlay {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.8) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.fog-bottom {
+  position: fixed;
+  bottom: -50px;
+  left: -10%;
+  right: -10%;
+  height: 300px;
+  background: radial-gradient(ellipse at center, rgba(139,69,19,0.15), transparent 70%);
+  filter: blur(40px);
+  animation: fogDrift 30s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.dust-particles {
+  position: fixed;
+  inset: 0;
+  background-image: 
+    radial-gradient(circle, rgba(255,140,0,0.3) 1px, transparent 1px),
+    radial-gradient(circle, rgba(255,140,0,0.2) 1px, transparent 1px);
+  background-size: 50px 50px, 80px 80px;
+  background-position: 0 0, 40px 40px;
+  opacity: 0.3;
+  animation: dustFloat 60s linear infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes fogDrift {
+  0%, 100% { transform: translateX(-5%); }
+  50% { transform: translateX(5%); }
+}
+
+@keyframes dustFloat {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-100px); }
+}
+
+/* Main Layout */
+.game-layout {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: 280px 1fr 320px;
+  gap: 2rem;
+  padding: 2rem;
+  height: 100vh;
+  max-width: 1800px;
+  margin: 0 auto;
+}
+
+/* Player Info Panel */
+.player-info-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.player-name-display {
+  background: linear-gradient(135deg, rgba(20,15,10,0.9), rgba(40,25,15,0.9));
+  border: 2px solid rgba(255,140,0,0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 
+    0 0 30px rgba(255,140,0,0.2),
+    inset 0 0 20px rgba(0,0,0,0.5);
+  text-align: center;
+}
+
+.skull-icon {
+  font-size: 3rem;
+  color: #8b4513;
+  font-family: 'Nosifer', cursive;
+  animation: skullFloat 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 10px rgba(139,69,19,0.5));
+}
+
+@keyframes skullFloat {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-10px) rotate(2deg); }
+}
+
+.player-name {
+  font-family: 'Creepster', cursive;
+  font-size: 1.9rem;
+  font-weight: 400;
+  color: #ff8c00;
+  text-shadow: 
+    0 0 15px rgba(255,140,0,0.8),
+    2px 2px 4px rgba(0,0,0,0.9);
+  margin-top: 0.5rem;
+  letter-spacing: 0.05em;
+}
+
+.stats-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.stat-item {
+  background: rgba(20,15,10,0.8);
+  border: 2px solid rgba(139,69,19,0.4);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-label {
+  font-family: 'Metal Mania', cursive;
+  font-size: 1.1rem;
+  color: #8b7355;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.stat-value {
+  font-family: 'Butcherman', cursive;
+  font-size: 1.7rem;
+  font-weight: 400;
+  color: #d4af37;
+  text-shadow: 0 0 10px rgba(212,175,55,0.6);
+}
+
+.turn-indicator {
+  border-color: rgba(220,20,60,0.5);
+  box-shadow: 0 0 20px rgba(220,20,60,0.3);
+}
+
+.turn-name {
+  color: #dc143c;
+  text-shadow: 0 0 15px rgba(220,20,60,0.8);
+  animation: turnPulse 2s ease-in-out infinite;
+}
+
+@keyframes turnPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.last-step-display {
+  background: rgba(20,15,10,0.95);
+  border: 3px solid rgba(34,139,34,0.4);
+  border-radius: 8px;
+  padding: 1rem;
+  min-height: 60px;
+  font-family: 'Metal Mania', cursive;
+  font-size: 1.1rem;
+  color: #32cd32;
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+
+/* Bingo Board */
+.bingo-board-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+}
+
+.board-frame {
+  position: relative;
+  background: 
+    linear-gradient(135deg, rgba(20,15,10,0.98), rgba(40,25,15,0.98)),
+    url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect fill="%23000" width="100" height="100"/><path d="M0 0L100 100M100 0L0 100" stroke="%23ff8c00" stroke-width="0.5" opacity="0.1"/></svg>');
+  border: 4px solid #8b4513;
+  border-radius: 16px;
+  padding: 2.5rem;
+  box-shadow: 
+    0 0 60px rgba(0,0,0,0.9),
+    inset 0 0 40px rgba(0,0,0,0.8),
+    0 20px 60px rgba(0,0,0,0.9);
+  backdrop-filter: blur(10px);
+}
+
+.corner-ornament {
+  position: absolute;
+  font-size: 1.8rem;
+  color: #8b4513;
+  font-family: 'Nosifer', cursive;
+  filter: drop-shadow(0 0 8px rgba(139,69,19,0.6));
+  animation: ornamentGlow 3s ease-in-out infinite;
+}
+
+.corner-ornament.top-left { 
+  top: -15px; 
+  left: -15px;
+}
+
+.corner-ornament.top-right { 
+  top: -15px; 
+  right: -15px;
+}
+
+.corner-ornament.bottom-left { 
+  bottom: -15px; 
+  left: -15px;
+}
+
+.corner-ornament.bottom-right { 
+  bottom: -15px; 
+  right: -15px;
+}
+
+@keyframes ornamentGlow {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(255,140,0,0.6)); }
+  50% { filter: drop-shadow(0 0 15px rgba(255,140,0,0.9)); }
+}
+
+.horror-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.tile {
+  width: 90px;
+  height: 90px;
+  background: 
+    linear-gradient(135deg, rgba(60,40,20,0.95), rgba(40,25,15,0.95)),
+    url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><rect fill="%23000" width="20" height="20" opacity="0.3"/></svg>');
+  border: 3px solid rgba(139,69,19,0.7);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Eater', cursive;
+  font-size: 2.5rem;
+  font-weight: 400;
+  color: #ff8c00;
+  text-shadow: 
+    0 0 10px rgba(255,140,0,0.8),
+    2px 2px 4px rgba(0,0,0,0.9);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 
+    inset 0 0 15px rgba(0,0,0,0.7),
+    0 4px 10px rgba(0,0,0,0.5);
+}
+
+.tile::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(255,140,0,0.1), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.tile:hover {
+  transform: scale(1.08);
+  border-color: rgba(255,140,0,0.9);
+  box-shadow: 
+    0 0 25px rgba(255,140,0,0.6),
+    inset 0 0 20px rgba(255,140,0,0.2);
+}
+
+.tile:hover::before {
+  opacity: 1;
+}
+
+.tile.clicked {
+  background: 
+    linear-gradient(135deg, rgba(34,139,34,0.4), rgba(0,100,0,0.4)),
+    linear-gradient(135deg, rgba(60,40,20,0.95), rgba(40,25,15,0.95));
+  border-color: #32cd32;
+  color: #7fff00;
+  text-shadow: 
+    0 0 20px rgba(50,205,50,1),
+    0 0 30px rgba(50,205,50,0.8);
+  box-shadow: 
+    0 0 35px rgba(50,205,50,0.7),
+    inset 0 0 20px rgba(50,205,50,0.2);
+  animation: tileGlowGreen 1.5s ease-in-out infinite;
+}
+
+.tile.bingoSuccess {
+  background: 
+    linear-gradient(135deg, rgba(139,0,0,0.5), rgba(100,0,0,0.5)),
+    linear-gradient(135deg, rgba(60,40,20,0.95), rgba(40,25,15,0.95));
+  border-color: #dc143c;
+  color: #ff6347;
+  text-shadow: 
+    0 0 25px rgba(220,20,60,1),
+    0 0 35px rgba(220,20,60,0.9);
+  box-shadow: 
+    0 0 45px rgba(220,20,60,0.9),
+    inset 0 0 25px rgba(220,20,60,0.3);
+  animation: tileGlowRed 1s ease-in-out infinite;
+}
+
+@keyframes tileGlowGreen {
+  0%, 100% { box-shadow: 0 0 35px rgba(50,205,50,0.7), inset 0 0 20px rgba(50,205,50,0.2); }
+  50% { box-shadow: 0 0 50px rgba(50,205,50,1), inset 0 0 30px rgba(50,205,50,0.4); }
+}
+
+@keyframes tileGlowRed {
+  0%, 100% { box-shadow: 0 0 45px rgba(220,20,60,0.9), inset 0 0 25px rgba(220,20,60,0.3); }
+  50% { box-shadow: 0 0 65px rgba(220,20,60,1), inset 0 0 40px rgba(220,20,60,0.5); }
+}
+
+.bingo-status {
+  font-family: 'Nosifer', cursive;
+  font-size: 3.5rem;
+  color: #dc143c;
+  text-shadow: 
+    0 0 20px rgba(220,20,60,1),
+    0 0 40px rgba(220,20,60,0.8),
+    3px 3px 6px rgba(0,0,0,0.9);
+  text-align: center;
+  animation: bingoFlicker 0.5s ease-in-out infinite;
+  letter-spacing: 0.1em;
+}
+
+@keyframes bingoFlicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+/* Restart Button */
+.horror-restart-btn {
+  position: relative;
+  background: linear-gradient(135deg, #8b0000, #dc143c);
+  border: 3px solid #8b4513;
+  border-radius: 12px;
+  padding: 1.3rem 4rem;
+  font-family: 'Butcherman', cursive;
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: #fff;
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow: 
+    0 0 30px rgba(220,20,60,0.6),
+    0 10px 30px rgba(0,0,0,0.8);
+  transition: all 0.3s ease;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.btn-glow {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: btnShine 3s linear infinite;
+}
+
+@keyframes btnShine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.btn-text {
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 0 10px rgba(255,255,255,0.8);
+}
+
+.horror-restart-btn:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 
+    0 0 50px rgba(220,20,60,0.9),
+    0 15px 40px rgba(0,0,0,0.9);
+  border-color: #ffa500;
+}
+
+.horror-restart-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Activity Panel */
+.activity-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.panel-header {
+  background: linear-gradient(135deg, rgba(20,15,10,0.95), rgba(40,25,15,0.95));
+  border: 3px solid rgba(139,69,19,0.6);
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  box-shadow: 0 0 20px rgba(0,0,0,0.8);
+  backdrop-filter: blur(10px);
+}
+
+.lantern-icon {
+  font-size: 1.8rem;
+  color: #ff8c00;
+  font-family: 'Nosifer', cursive;
+  animation: lanternFlicker 2s ease-in-out infinite;
+}
+
+@keyframes lanternFlicker {
+  0%, 100% { opacity: 1; filter: brightness(1); }
+  50% { opacity: 0.8; filter: brightness(0.8); }
+}
+
+.panel-title {
+  font-family: 'Creepster', cursive;
+  font-size: 1.6rem;
+  font-weight: 400;
+  color: #ff8c00;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 10px rgba(255,140,0,0.6);
+  margin: 0;
+}
+
+.activity-scroll {
+  flex: 1;
+  background: rgba(20,15,10,0.95);
+  border: 3px solid rgba(139,69,19,0.5);
+  border-radius: 12px;
+  padding: 1.5rem;
+  overflow-y: auto;
+  max-height: calc(100vh - 300px);
+  box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
+  backdrop-filter: blur(10px);
+  font-family: 'Metal Mania', cursive;
+  font-size: 1.1rem;
+  color: #d4af37;
+}
+
+.activity-scroll::-webkit-scrollbar {
+  width: 10px;
+}
+
+.activity-scroll::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.5);
+  border-radius: 5px;
+}
+
+.activity-scroll::-webkit-scrollbar-thumb {
+  background: rgba(139,69,19,0.7);
+  border-radius: 5px;
+}
+
+.activity-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(139,69,19,0.9);
+}
+
+.chat-input-container {
+  position: relative;
+}
+
+.horror-chat-input {
+  width: 100%;
+  background: rgba(20,15,10,0.95);
+  border: 3px solid rgba(139,69,19,0.5);
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+  font-family: 'Metal Mania', cursive;
+  font-size: 1.1rem;
+  color: #d4af37;
+  outline: none;
+  transition: all 0.3s ease;
+  box-shadow: inset 0 0 15px rgba(0,0,0,0.7);
+  backdrop-filter: blur(10px);
+}
+
+.horror-chat-input::placeholder {
+  color: rgba(139,105,85,0.6);
+  font-style: italic;
+}
+
+.horror-chat-input:focus {
+  border-color: rgba(255,140,0,0.8);
+  box-shadow: 
+    0 0 25px rgba(255,140,0,0.4),
+    inset 0 0 20px rgba(0,0,0,0.7);
+}
+
+/* Responsive Design */
+@media (max-width: 1400px) {
+  .game-layout {
+    grid-template-columns: 240px 1fr 280px;
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+  
+  .tile {
+    width: 80px;
+    height: 80px;
+    font-size: 2.2rem;
+  }
+}
+
+@media (max-width: 1024px) {
+  .game-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .player-info-panel,
+  .activity-panel {
+    flex-direction: row;
+    gap: 1rem;
+  }
+  
+  .tile {
+    width: 70px;
+    height: 70px;
+    font-size: 1.9rem;
+  }
+  
+  .bingo-status {
+    font-size: 2.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .tile {
+    width: 60px;
+    height: 60px;
+    font-size: 1.6rem;
+  }
+  
+  .player-name {
+    font-size: 1.5rem;
+  }
+  
+  .stat-value {
+    font-size: 1.4rem;
+  }
+}
+
+/* Custom SweetAlert2 Horror Theme */
+.swal2-popup {
+  background: linear-gradient(135deg, rgba(20,15,10,0.98), rgba(40,25,15,0.98)) !important;
+  border: 4px solid #8b4513 !important;
+  border-radius: 16px !important;
+  box-shadow: 
+    0 0 60px rgba(0,0,0,0.9),
+    inset 0 0 40px rgba(0,0,0,0.8) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.swal2-title {
+  font-family: 'Nosifer', cursive !important;
+  font-size: 3rem !important;
+  color: #ff8c00 !important;
+  text-shadow: 
+    0 0 20px rgba(255,140,0,0.8),
+    2px 2px 4px rgba(0,0,0,0.9) !important;
+  letter-spacing: 0.1em !important;
+}
+
+.swal2-html-container {
+  font-family: 'Creepster', cursive !important;
+  font-size: 1.8rem !important;
+  color: #d4af37 !important;
+  text-shadow: 0 0 10px rgba(212,175,55,0.6) !important;
+}
+
+.swal2-icon.swal2-success {
+  border-color: #32cd32 !important;
+  color: #32cd32 !important;
+}
+
+.swal2-icon.swal2-success [class^='swal2-success-line'] {
+  background-color: #32cd32 !important;
+}
+
+.swal2-icon.swal2-success .swal2-success-ring {
+  border-color: rgba(50,205,50,0.3) !important;
+}
+
+.swal2-icon.swal2-error {
+  border-color: #dc143c !important;
+  color: #dc143c !important;
+}
+
+.swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
+  background-color: #dc143c !important;
+}
+
+.swal2-confirm {
+  background: linear-gradient(135deg, #8b0000, #dc143c) !important;
+  border: 3px solid #8b4513 !important;
+  border-radius: 12px !important;
+  padding: 1rem 3rem !important;
+  font-family: 'Butcherman', cursive !important;
+  font-size: 1.3rem !important;
+  color: #fff !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.15em !important;
+  box-shadow: 
+    0 0 30px rgba(220,20,60,0.6),
+    0 10px 30px rgba(0,0,0,0.8) !important;
+  transition: all 0.3s ease !important;
+}
+
+.swal2-confirm:hover {
+  transform: translateY(-2px) scale(1.05) !important;
+  box-shadow: 
+    0 0 50px rgba(220,20,60,0.9),
+    0 15px 40px rgba(0,0,0,0.9) !important;
+  border-color: #ff8c00 !important;
+}
+
+.swal2-styled:focus {
+  box-shadow: 
+    0 0 30px rgba(220,20,60,0.6),
+    0 10px 30px rgba(0,0,0,0.8) !important;
+}
+
+/* Horror Toast Notifications */
+.horror-toast-popup {
+  background: linear-gradient(135deg, rgba(20,15,10,0.98), rgba(40,25,15,0.98)) !important;
+  border: 3px solid #8b4513 !important;
+  border-radius: 12px !important;
+  box-shadow: 
+    0 0 40px rgba(0,0,0,0.9),
+    inset 0 0 20px rgba(0,0,0,0.8) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.horror-toast-popup .swal2-title {
+  font-family: 'Creepster', cursive !important;
+  font-size: 1.3rem !important;
+  color: #dc143c !important;
+  text-shadow: 0 0 10px rgba(220,20,60,0.8) !important;
+}
+
+.horror-toast-popup .swal2-html-container {
+  font-family: 'Metal Mania', cursive !important;
+  font-size: 1rem !important;
+  color: #d4af37 !important;
+}
+
+
+</style>
+
+{% endblock content %}
+{% block script %}
+<script src="{% static 'js/bingo_sec.js' %}"></script>
+<script src="{% static 'js/bingo.js' %}"></script>
+<script src="{% static 'js/bingo_socket.js' %}"></script>
+{% endblock script %}
