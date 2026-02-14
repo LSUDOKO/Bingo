@@ -5,6 +5,17 @@
 <!-- Cinematic Horror Bingo Game -->
 <div class="horror-game-container">
   
+  <!-- Background Audio -->
+  <audio id="bgAudio" loop autoplay>
+    <source src="{% static 'assets/bg_audio.mp3' %}" type="audio/mpeg">
+    Your browser does not support the audio element.
+  </audio>
+  
+  <!-- Audio Control Button -->
+  <button class="audio-control-btn" id="audioToggle" aria-label="Toggle background music">
+    <img src="{% static 'assets/audio.png' %}" alt="Audio" class="audio-icon">
+  </button>
+  
   <!-- Atmospheric Background Effects -->
   <div class="fog-bottom"></div>
   <div class="dust-particles"></div>
@@ -186,6 +197,54 @@ body {
   height: 100vh;
   max-width: 1800px;
   margin: 0 auto;
+}
+
+/* Audio Control Button */
+.audio-control-btn {
+  position: fixed;
+  bottom: 2rem;
+  left: 2rem;
+  z-index: 100;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: 3px solid rgba(139,69,19,0.6);
+  background: linear-gradient(135deg, rgba(20,15,10,0.95), rgba(40,25,15,0.95));
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 
+    0 0 20px rgba(0,0,0,0.8),
+    inset 0 0 10px rgba(0,0,0,0.5);
+  padding: 0;
+}
+
+.audio-control-btn:hover {
+  transform: scale(1.1);
+  border-color: rgba(255,140,0,0.8);
+  box-shadow: 
+    0 0 30px rgba(255,140,0,0.5),
+    inset 0 0 15px rgba(0,0,0,0.5);
+}
+
+.audio-control-btn:active {
+  transform: scale(0.95);
+}
+
+.audio-icon {
+  width: 45px;
+  height: 45px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 5px rgba(255,140,0,0.6));
+  transition: all 0.3s ease;
+}
+
+.audio-control-btn.muted .audio-icon {
+  opacity: 0.3;
+  filter: grayscale(100%) drop-shadow(0 0 5px rgba(139,69,19,0.4));
 }
 
 /* Player Info Panel */
@@ -785,6 +844,57 @@ body {
 
 {% endblock content %}
 {% block script %}
+<script>
+// Background Audio Control
+document.addEventListener('DOMContentLoaded', function() {
+  const bgAudio = document.getElementById('bgAudio');
+  const audioToggle = document.getElementById('audioToggle');
+  
+  // Set initial volume
+  bgAudio.volume = 0.3;
+  
+  // Try to play audio automatically
+  const playPromise = bgAudio.play();
+  
+  if (playPromise !== undefined) {
+    playPromise.then(() => {
+      // Autoplay started successfully
+      console.log('Background music playing');
+    }).catch(error => {
+      // Autoplay was prevented - user interaction required
+      console.log('Autoplay prevented, waiting for user interaction');
+      
+      // Show a subtle prompt or just wait for user to click the button
+      audioToggle.classList.add('muted');
+      bgAudio.pause();
+    });
+  }
+  
+  // Toggle audio on button click
+  audioToggle.addEventListener('click', function() {
+    if (bgAudio.paused) {
+      bgAudio.play();
+      audioToggle.classList.remove('muted');
+    } else {
+      bgAudio.pause();
+      audioToggle.classList.add('muted');
+    }
+  });
+  
+  // Also allow clicking anywhere on the page to start audio if it hasn't started
+  let audioStarted = false;
+  document.addEventListener('click', function startAudio() {
+    if (!audioStarted && bgAudio.paused) {
+      bgAudio.play().then(() => {
+        audioStarted = true;
+        audioToggle.classList.remove('muted');
+      }).catch(e => {
+        console.log('Audio play failed:', e);
+      });
+    }
+  }, { once: false });
+});
+</script>
 <script src="{% static 'js/bingo_sec.js' %}"></script>
 <script src="{% static 'js/bingo.js' %}"></script>
 <script src="{% static 'js/bingo_socket.js' %}"></script>
