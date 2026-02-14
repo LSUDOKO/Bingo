@@ -49,8 +49,15 @@ function fillGrid() {
       if (gamestate !== "ON") {
         return Swal.fire({
           icon: "error",
-          title: "Oops...",
-          text: "Game Finished ! Please Restart To Play Again !",
+          title: "Game Over",
+          html: "Game Finished! Please Restart To Play Again!",
+          confirmButtonText: "OK",
+          customClass: {
+            popup: 'horror-alert-popup',
+            title: 'horror-alert-title',
+            htmlContainer: 'horror-alert-text',
+            confirmButton: 'horror-alert-button'
+          }
         });
       }
       // checkBingo function में turn check होगा
@@ -76,20 +83,30 @@ function checkBingo(item) {
   if (addmearr.includes(dataint)) {
     return Swal.fire({
       icon: "error",
-      title: "Oops...",
-      text: "Already Selected",
+      title: "Already Selected",
+      html: "This number is already chosen",
       toast: true,
       position: "top-right",
+      timer: 3000,
+      showConfirmButton: false,
+      customClass: {
+        popup: 'horror-toast-popup'
+      }
     });
   }
   // Turn check करें click करने से पहले
   if (!currPlayer || currPlayer !== loc_username) {
     return Swal.fire({
       icon: "error",
-      title: "Oops...",
-      text: `Not Your Turn! Current turn: ${currPlayer || 'Not set'}`,
+      title: "Not Your Turn!",
+      html: `Current turn: ${currPlayer || 'Not set'}`,
       toast: true,
       position: "top-right",
+      timer: 3000,
+      showConfirmButton: false,
+      customClass: {
+        popup: 'horror-toast-popup'
+      }
     });
   }
   addmearr.push(dataint);
@@ -122,7 +139,19 @@ function loopItemsAndCheck() {
       bingodiv.append(span);
       bingoIndex += 1;
       if (bingoIndex === 5) {
-        Swal.fire(loc_username, "You won the Game ", "success");
+        Swal.fire({
+          title: loc_username,
+          html: "You won the Game!",
+          icon: "success",
+          confirmButtonText: "OK",
+          background: 'linear-gradient(135deg, rgba(20,15,10,0.98), rgba(40,25,15,0.98))',
+          customClass: {
+            popup: 'horror-alert-popup',
+            title: 'horror-alert-title',
+            htmlContainer: 'horror-alert-text',
+            confirmButton: 'horror-alert-button'
+          }
+        });
         ws.send(
           JSON.stringify({
             command: "won",

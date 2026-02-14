@@ -103,7 +103,18 @@ ws.onmessage = function (e) {
   if (command === "won") {
     gamestate = "OFF";
     if (notForMe(data)) {
-      Swal.fire("You Lost", data.info, "error");
+      Swal.fire({
+        title: "You Lost",
+        html: data.info,
+        icon: "error",
+        confirmButtonText: "OK",
+        customClass: {
+          popup: 'horror-alert-popup',
+          title: 'horror-alert-title',
+          htmlContainer: 'horror-alert-text',
+          confirmButton: 'horror-alert-button'
+        }
+      });
     }
   }
 
@@ -135,10 +146,15 @@ chatInput.addEventListener("keyup", (e) => {
     if (!chatInput.value.trim()) {
       return Swal.fire({
         icon: "error",
-        title: "Oops...",
-        text: "Your Message Cannot Be Empty !!",
+        title: "Empty Message",
+        html: "Your message cannot be empty!",
         toast: true,
         position: "top-right",
+        timer: 3000,
+        showConfirmButton: false,
+        customClass: {
+          popup: 'horror-toast-popup'
+        }
       });
     }
     ws.send(
