@@ -2,8 +2,6 @@
 
 A real-time multiplayer Bingo game built with Django Channels and JavaScript. Play the classic paper Bingo game with friends online in a spooky horror-themed cinematic experience.
 
-![Bingo Game Demo](https://user-images.githubusercontent.com/64244098/154678098-f24b7baf-e32b-4647-b22e-53c5cafd15a4.gif)
-
 ## 📸 Screenshots
 
 ### Home Page
